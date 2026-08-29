@@ -227,8 +227,9 @@ final class BucketListTests: XCTestCase {
 
         let directory = try AppDirectories.photos
         let filenames = ["test-\(UUID().uuidString).png", "test-\(UUID().uuidString).png"]
+        let videoFilename = "test-\(UUID().uuidString).mov"
         defer {
-            for filename in filenames {
+            for filename in filenames + [videoFilename] {
                 try? FileManager.default.removeItem(at: directory.appending(path: filename))
             }
         }
@@ -255,6 +256,20 @@ final class BucketListTests: XCTestCase {
             memory.photos.append(media)
             context.insert(media)
         }
+
+        try Data("invalid-video-is-enough-for-a-poster-fallback".utf8).write(
+            to: directory.appending(path: videoFilename),
+            options: .atomic
+        )
+        let video = MemoryPhoto(
+            originalFilename: videoFilename,
+            managedFilename: videoFilename,
+            mediaKind: .video,
+            createdAt: Date().addingTimeInterval(3),
+            memory: memory
+        )
+        memory.photos.append(video)
+        context.insert(video)
         try context.save()
 
         let size = NSSize(width: 900, height: 1050)

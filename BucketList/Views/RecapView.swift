@@ -158,8 +158,25 @@ struct RecapView: View {
     private func recapMedia(_ media: MemoryPhoto, title: String) -> some View {
         if let url = ManagedPhotoStore.fileURL(for: media) {
             if media.mediaKind == .video {
-                ManagedVideoPlayer(url: url)
+                VideoThumbnail(url: url)
+                    .aspectRatio(16 / 9, contentMode: .fit)
                     .frame(maxWidth: .infinity)
+                    .clipped()
+                    .overlay {
+                        Image(systemName: "play.circle.fill")
+                            .font(.system(size: 54))
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, .black.opacity(0.55))
+                            .shadow(radius: 4)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        previewMedia = MediaPreview(
+                            url: url,
+                            title: title,
+                            mediaKind: .video
+                        )
+                    }
             } else if let image = NSImage(contentsOf: url) {
                 Image(nsImage: image)
                     .resizable()
