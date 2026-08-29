@@ -1,6 +1,5 @@
 import AppKit
 import AVFoundation
-import AVKit
 import PhotosUI
 import SwiftData
 import SwiftUI
@@ -301,10 +300,14 @@ struct CompletionEditorSheet: View {
 
     private func openPreview(for media: MemoryPhoto) {
         guard let url = ManagedPhotoStore.fileURL(for: media) else { return }
+        if media.mediaKind == .video {
+            VideoPlaybackController.shared.present(url: url, title: item.title)
+            return
+        }
         previewMedia = MediaPreview(
             url: url,
             title: item.title,
-            mediaKind: media.mediaKind
+            mediaKind: .photo
         )
     }
 }
@@ -427,8 +430,19 @@ struct MediaPreviewSheet: View {
             Divider()
 
             if media.mediaKind == .video {
-                ManagedVideoPlayer(url: media.url)
-                    .padding(20)
+                ContentUnavailableView {
+                    Label("Video", systemImage: "play.rectangle.fill")
+                } description: {
+                    Text("Open this video in the BucketList player.")
+                } actions: {
+                    Button("Play Video") {
+                        dismiss()
+                        VideoPlaybackController.shared.present(
+                            url: media.url,
+                            title: media.title
+                        )
+                    }
+                }
             } else if let image = NSImage(contentsOf: media.url) {
                 Image(nsImage: image)
                     .resizable()
@@ -442,23 +456,6 @@ struct MediaPreviewSheet: View {
             }
         }
         .frame(minWidth: 680, minHeight: 500)
-    }
-}
-
-struct ManagedVideoPlayer: View {
-    let url: URL
-    @State private var player: AVPlayer
-
-    init(url: URL) {
-        self.url = url
-        _player = State(initialValue: AVPlayer(url: url))
-    }
-
-    var body: some View {
-        VideoPlayer(player: player)
-            .aspectRatio(16 / 9, contentMode: .fit)
-            .background(Color.black)
-            .onDisappear { player.pause() }
     }
 }
 

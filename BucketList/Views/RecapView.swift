@@ -171,10 +171,9 @@ struct RecapView: View {
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        previewMedia = MediaPreview(
+                        VideoPlaybackController.shared.present(
                             url: url,
-                            title: title,
-                            mediaKind: .video
+                            title: title
                         )
                     }
             } else if let image = NSImage(contentsOf: url) {

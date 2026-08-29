@@ -171,6 +171,46 @@ final class BucketListTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
     }
 
+    func testNativeVideoPlaybackWindowOpensWithoutSwiftUIBridge() throws {
+        let videoURL = FileManager.default.temporaryDirectory
+            .appending(path: "test-\(UUID().uuidString).mov")
+        try Data("player-window-test".utf8).write(to: videoURL, options: .atomic)
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        VideoPlaybackController.shared.present(
+            url: videoURL,
+            title: "Playback Test",
+            autoPlay: false
+        )
+        XCTAssertTrue(VideoPlaybackController.shared.isPresenting)
+        VideoPlaybackController.shared.dismiss()
+        XCTAssertFalse(VideoPlaybackController.shared.isPresenting)
+    }
+
+    func testNativePlayerWithExistingManagedVideoWhenAvailable() throws {
+        let mediaDirectory = FileManager.default.homeDirectoryForCurrentUser
+            .appending(path: "Library/Containers/com.patrykkolosovski.BucketList/Data/Library/Application Support/BucketList/Photos")
+        let videoURL = try FileManager.default
+            .contentsOfDirectory(
+                at: mediaDirectory,
+                includingPropertiesForKeys: [.fileSizeKey],
+                options: [.skipsHiddenFiles]
+            )
+            .first { ["mov", "mp4", "m4v"].contains($0.pathExtension.lowercased()) }
+
+        guard let videoURL else {
+            throw XCTSkip("No locally managed BucketList video is available.")
+        }
+
+        VideoPlaybackController.shared.present(
+            url: videoURL,
+            title: "Managed Video Test"
+        )
+        RunLoop.current.run(until: Date().addingTimeInterval(3))
+        XCTAssertTrue(VideoPlaybackController.shared.isPresenting)
+        VideoPlaybackController.shared.dismiss()
+    }
+
     func testMainWindowRendersAtCommonSizes() throws {
         let suiteName = "BucketListRenderTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
